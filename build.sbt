@@ -1,0 +1,7 @@
+name := "Optics"
+version := "0.1"
+scalaVersion := "2.12.8"
+organization := "com.hwaipy"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+libraryDependencies += "org.scalanlp" %% "breeze" % "1.0-RC2"
+libraryDependencies += "org.scalanlp" %% "breeze-natives" % "1.0-RC2"
