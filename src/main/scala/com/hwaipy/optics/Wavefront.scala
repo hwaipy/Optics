@@ -1,31 +1,28 @@
 package com.hwaipy.optics
 
-import scala.util.Random
+import breeze.linalg._
+import breeze.math.Complex
 
-class WavefrontFactory(telescopeDiameter: Double, friedParameter: Double, halfSize: Double = 1, maxIndex: Int = 64, val grid: Int = 200) {
-  val zernikePs = Range(1, maxIndex + 1).map(index => ZernikeP(index, 1, grid))
-  val stds = zernikePs.map(zernike => zernike.std(telescopeDiameter, friedParameter))
-  val random = new Random(0)
+object Wavefront {
+  def plane(size: Double = 1, grid: Int = 200) =
+    new Wavefront(
+      Range(0, grid).toArray.map(sub => Range(0, grid).toArray.map(_ => Complex.one)),
+      size)
 
-  def generate = {
-    val wavefront = new Array[Array[Double]](grid)
-    Range(0, grid).map(i => wavefront(i) = new Array[Double](grid))
-    val randomWeights = stds.map(std => random.nextGaussian() * std)
-    randomWeights.zip(zernikePs).foreach(z => {
-      for (ix <- 0 until grid) {
-        for (iy <- 0 until grid) {
-          val d = z._1 * z._2.array(ix)(iy)
-          wavefront(ix)(iy) += d
-        }
-      }
-    })
-
-    def linspace(start: Double, stop: Double, count: Int) = Range(0, count).map(_ / (count - 1.0) * (stop - start) + start).toList
-
-    val xs = linspace(-halfSize, halfSize, grid).toArray
-    val ys = linspace(-halfSize, halfSize, grid).toArray
-    new Wavefront(wavefront, xs, ys, grid)
-  }
+  def gaussian(sigma: Double = 0.3, size: Double = 1, grid: Int = 200) =
+    new Wavefront(
+      Range(0, grid).toArray.map(yi => Range(0, grid).toArray.map(xi => {
+        val x = (xi / grid.toDouble - 1.0 / 2) * size
+        val y = (yi / grid.toDouble - 1.0 / 2) * size
+        Complex(math.exp(-(x * x + y * y) / (sigma * sigma)), 0)
+      })),
+      size)
 }
 
-class Wavefront(val phaseArray: Array[Array[Double]], val xs: Array[Double], val ys: Array[Double], val grid: Int = 200)
+class Wavefront(private val E: Array[Array[Complex]], val size: Double) {
+  def EArray = E.map(sub => sub.map(d => d))
+
+  def xs = linspace(-size / 2, size / 2, E(0).size).data
+
+  def ys = linspace(-size / 2, size / 2, E.size).data
+}
